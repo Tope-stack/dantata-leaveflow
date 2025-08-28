@@ -8,8 +8,12 @@ import { AdminDashboard } from './AdminDashboard';
 export const DashboardRouter: React.FC = () => {
   const { user, profile } = useAuth();
 
+  console.log('DashboardRouter - User:', user?.email);
+  console.log('DashboardRouter - Profile:', profile);
+  console.log('DashboardRouter - Profile Role:', profile?.role);
+
   if (!user || !profile) {
-    return null;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   switch (profile.role) {
