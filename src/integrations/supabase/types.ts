@@ -319,6 +319,14 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: undefined
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_manager_of_user: {
+        Args: { employee_uuid: string; manager_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       approval_status: "pending" | "approved" | "rejected"

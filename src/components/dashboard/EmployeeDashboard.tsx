@@ -17,7 +17,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 export const EmployeeDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { profile } = useAuth();
 
   // Mock data for demonstration
   const leaveBalance = {
@@ -68,7 +68,7 @@ export const EmployeeDashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-corporate-black">
-            Welcome back, {user?.name}!
+            Welcome back, {profile ? `${profile.first_name} ${profile.last_name}` : 'User'}!
           </h1>
           <p className="text-gray-600 mt-1">
             Here's an overview of your leave status and recent activity.

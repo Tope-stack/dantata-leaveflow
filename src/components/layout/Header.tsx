@@ -15,7 +15,7 @@ import {
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, profile, signOut } = useAuth();
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
@@ -49,15 +49,15 @@ export const Header: React.FC = () => {
                 <User className="h-4 w-4 text-white" />
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-corporate-black">{user?.name}</p>
-                <p className="text-xs text-gray-600 capitalize">{user?.role}</p>
+                <p className="text-sm font-medium text-corporate-black">{profile ? `${profile.first_name} ${profile.last_name}` : user?.email}</p>
+                <p className="text-xs text-gray-600 capitalize">{profile?.role}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-white">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.name}</p>
+                <p className="text-sm font-medium leading-none">{profile ? `${profile.first_name} ${profile.last_name}` : user?.email}</p>
                 <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
               </div>
             </DropdownMenuLabel>
@@ -71,7 +71,7 @@ export const Header: React.FC = () => {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="hover:bg-gray-100 text-red-600">
+            <DropdownMenuItem onClick={signOut} className="hover:bg-gray-100 text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>

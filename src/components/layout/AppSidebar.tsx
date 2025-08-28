@@ -62,8 +62,8 @@ const getMenuItems = (role: UserRole) => {
 };
 
 export const AppSidebar: React.FC = () => {
-  const { user } = useAuth();
-  const menuItems = getMenuItems(user?.role || 'employee');
+  const { profile } = useAuth();
+  const menuItems = getMenuItems(profile?.role || 'employee');
 
   return (
     <Sidebar className="border-r border-gray-200">
