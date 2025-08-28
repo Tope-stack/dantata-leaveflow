@@ -99,10 +99,6 @@ export const AdminDashboard: React.FC = () => {
             <FileText className="h-4 w-4 mr-2" />
             Generate Report
           </Button>
-          <UserManagementDialog 
-            managers={managers}
-            onUserCreated={refetchRequests}
-          />
         </div>
       </div>
 
