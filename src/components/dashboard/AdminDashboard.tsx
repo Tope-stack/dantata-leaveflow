@@ -12,66 +12,76 @@ import {
   FileText,
   BarChart3,
   Database,
-  UserPlus,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLeaveRequests } from '@/hooks/useLeaveRequests';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { LeaveApprovalCard } from './LeaveApprovalCard';
+import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 
 export const AdminDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { requests, loading: requestsLoading, approveRequest, rejectRequest, refetch: refetchRequests } = useLeaveRequests();
+  const { teamMembers, loading: teamLoading } = useTeamMembers();
+  const { logs, loading: logsLoading } = useAuditLogs();
 
-  // Mock data for demonstration
-  const systemStats = {
-    totalEmployees: 150,
-    activeRequests: 23,
-    approvedThisMonth: 89,
-    systemAlerts: 2,
+  if (!profile || profile.role !== 'admin') {
+    return null;
+  }
+
+  // Get all profiles for admin (teamMembers hook returns all when user is admin)
+  const allProfiles = teamMembers;
+  const managers = allProfiles.filter(p => p.role === 'manager');
+
+  const pendingRequests = requests.filter(req => req.status === 'pending');
+  const approvedThisMonth = requests.filter(req => 
+    req.status === 'approved' && 
+    new Date(req.created_at).getMonth() === new Date().getMonth()
+  );
+
+  // Department statistics
+  const departmentStats = allProfiles.reduce((acc, profile) => {
+    const dept = profile.department;
+    if (!acc[dept]) {
+      acc[dept] = { name: dept, employees: 0, active: 0 };
+    }
+    acc[dept].employees++;
+    if (profile.is_active) acc[dept].active++;
+    return acc;
+  }, {} as Record<string, { name: string; employees: number; active: number }>);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const recentActivity = [
-    { id: 1, type: 'Leave Request', user: 'John Doe', action: 'submitted', time: '2 minutes ago' },
-    { id: 2, type: 'Policy Update', user: 'HR Admin', action: 'modified sick leave policy', time: '1 hour ago' },
-    { id: 3, type: 'User Registration', user: 'New Employee', action: 'joined the system', time: '3 hours ago' },
-    { id: 4, type: 'Leave Approval', user: 'Jane Smith', action: 'approved by manager', time: '5 hours ago' },
-  ];
-
-  const systemAlerts = [
-    { id: 1, type: 'warning', message: 'Annual leave policy update required by end of month', priority: 'high' },
-    { id: 2, type: 'info', message: 'Database maintenance scheduled for this weekend', priority: 'medium' },
-  ];
-
-  const departmentStats = [
-    { name: 'Engineering', employees: 45, onLeave: 3, utilization: 93 },
-    { name: 'Sales', employees: 32, onLeave: 2, utilization: 94 },
-    { name: 'Marketing', employees: 18, onLeave: 1, utilization: 94 },
-    { name: 'HR', employees: 12, onLeave: 0, utilization: 100 },
-    { name: 'Finance', employees: 15, onLeave: 1, utilization: 93 },
-  ];
-
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case 'error':
+  const getActionIcon = (action: string) => {
+    switch (action.toLowerCase()) {
+      case 'insert':
+        return <Database className="h-4 w-4 text-green-500" />;
+      case 'update':
+        return <Settings className="h-4 w-4 text-blue-500" />;
+      case 'delete':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-blue-500" />;
+        return <Database className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const variants = {
-      high: 'bg-red-100 text-red-800',
-      medium: 'bg-yellow-100 text-yellow-800',
-      low: 'bg-green-100 text-green-800',
-    };
-    
+  if (requestsLoading || teamLoading || logsLoading) {
     return (
-      <Badge className={variants[priority as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
-        {priority}
-      </Badge>
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-corporate-orange" />
+      </div>
     );
-  };
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -89,10 +99,10 @@ export const AdminDashboard: React.FC = () => {
             <FileText className="h-4 w-4 mr-2" />
             Generate Report
           </Button>
-          <Button className="bg-corporate-orange hover:bg-corporate-orange-dark text-white">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
+          <UserManagementDialog 
+            managers={managers}
+            onUserCreated={refetchRequests}
+          />
         </div>
       </div>
 
@@ -104,7 +114,7 @@ export const AdminDashboard: React.FC = () => {
             <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{systemStats.totalEmployees}</div>
+            <div className="text-2xl font-bold text-corporate-black">{allProfiles.length}</div>
             <p className="text-xs text-muted-foreground">
               Registered users
             </p>
@@ -113,13 +123,13 @@ export const AdminDashboard: React.FC = () => {
 
         <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
             <Calendar className="h-4 w-4 text-corporate-orange" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{systemStats.activeRequests}</div>
+            <div className="text-2xl font-bold text-corporate-black">{pendingRequests.length}</div>
             <p className="text-xs text-muted-foreground">
-              Pending processing
+              Awaiting approval
             </p>
           </CardContent>
         </Card>
@@ -130,7 +140,7 @@ export const AdminDashboard: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{systemStats.approvedThisMonth}</div>
+            <div className="text-2xl font-bold text-corporate-black">{approvedThisMonth.length}</div>
             <p className="text-xs text-muted-foreground">
               Leave requests
             </p>
@@ -139,68 +149,60 @@ export const AdminDashboard: React.FC = () => {
 
         <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">System Activities</CardTitle>
             <Shield className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{systemStats.systemAlerts}</div>
+            <div className="text-2xl font-bold text-corporate-black">{logs.length}</div>
             <p className="text-xs text-muted-foreground">
-              Require attention
+              Recent audit logs
             </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* System Alerts */}
+        {/* Leave Approvals */}
+        <LeaveApprovalCard 
+          requests={requests}
+          onApprove={approveRequest}
+          onReject={rejectRequest}
+        />
+
+        {/* Recent Audit Logs */}
         <Card className="bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-corporate-black flex items-center gap-2">
               <Shield className="h-5 w-5 text-red-500" />
-              System Alerts
+              Recent Audit Logs
             </CardTitle>
-            <CardDescription>Important system notifications and warnings</CardDescription>
+            <CardDescription>Latest system activities and changes</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {systemAlerts.map((alert) => (
-                <div key={alert.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
-                  {getAlertIcon(alert.type)}
-                  <div className="flex-1">
-                    <p className="text-sm text-corporate-black">{alert.message}</p>
-                  </div>
-                  {getPriorityBadge(alert.priority)}
-                </div>
-              ))}
-            </div>
-            <Button variant="outline" className="w-full mt-4">
-              View All Alerts
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="bg-white shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-corporate-black">Recent Activity</CardTitle>
-            <CardDescription>Latest system activities and user actions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Database className="h-4 w-4 text-corporate-orange mt-1" />
+              {logs.slice(0, 6).map((log) => (
+                <div key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
+                  {getActionIcon(log.action)}
                   <div className="flex-1">
                     <p className="text-sm text-corporate-black">
-                      <span className="font-medium">{activity.user}</span> {activity.action}
+                      <span className="font-medium">{log.action.toUpperCase()}</span> on {log.table_name}
                     </p>
-                    <p className="text-xs text-gray-600">{activity.type} • {activity.time}</p>
+                    <p className="text-xs text-gray-600">
+                      {formatDate(log.created_at)}
+                      {log.user_id && ` • User: ${log.user_id.substring(0, 8)}...`}
+                    </p>
                   </div>
                 </div>
               ))}
+              {logs.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Database className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No audit logs available</p>
+                </div>
+              )}
             </div>
             <Button variant="outline" className="w-full mt-4">
-              View Activity Log
+              View All Audit Logs
             </Button>
           </CardContent>
         </Card>
@@ -209,25 +211,83 @@ export const AdminDashboard: React.FC = () => {
       {/* Department Statistics */}
       <Card className="bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-corporate-black">Department Statistics</CardTitle>
-          <CardDescription>Overview of leave utilization across departments</CardDescription>
+          <CardTitle className="text-lg font-semibold text-corporate-black">Department Overview</CardTitle>
+          <CardDescription>Employee distribution and activity across departments</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {departmentStats.map((dept) => (
+            {Object.values(departmentStats).map((dept) => (
               <div key={dept.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex-1">
                   <h4 className="font-medium text-corporate-black">{dept.name}</h4>
                   <p className="text-sm text-gray-600">
-                    {dept.employees} employees • {dept.onLeave} on leave
+                    {dept.employees} total employees • {dept.active} active
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-corporate-black">{dept.utilization}%</p>
-                  <p className="text-xs text-gray-600">Utilization</p>
+                  <p className="text-lg font-bold text-corporate-black">
+                    {dept.employees > 0 ? Math.round((dept.active / dept.employees) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-gray-600">Active rate</p>
                 </div>
               </div>
             ))}
+            {Object.keys(departmentStats).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No departments found</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* All System Users */}
+      <Card className="bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-corporate-black">System Users</CardTitle>
+          <CardDescription>All registered users and their roles</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {allProfiles.slice(0, 10).map((user) => (
+              <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div>
+                    <p className="font-medium text-sm text-corporate-black">
+                      {user.first_name} {user.last_name}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {user.employee_id} • {user.department} • {user.position}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Badge 
+                    variant="outline" 
+                    className={
+                      user.role === 'admin' ? 'border-red-200 text-red-700 bg-red-50' :
+                      user.role === 'manager' ? 'border-blue-200 text-blue-700 bg-blue-50' :
+                      'border-green-200 text-green-700 bg-green-50'
+                    }
+                  >
+                    {user.role}
+                  </Badge>
+                  <Badge 
+                    variant="outline"
+                    className={user.is_active ? 'border-green-200 text-green-700 bg-green-50' : 'border-red-200 text-red-700 bg-red-50'}
+                  >
+                    {user.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+            {allProfiles.length > 10 && (
+              <p className="text-center text-sm text-gray-500 pt-2">
+                Showing 10 of {allProfiles.length} users
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

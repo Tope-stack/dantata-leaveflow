@@ -7,36 +7,36 @@ import {
   Users, 
   Clock, 
   CheckCircle, 
-  XCircle, 
-  AlertTriangle,
   Calendar,
   TrendingUp,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLeaveRequests } from '@/hooks/useLeaveRequests';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { LeaveApprovalCard } from './LeaveApprovalCard';
 
 export const ManagerDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { requests, loading: requestsLoading, approveRequest, rejectRequest } = useLeaveRequests();
+  const { teamMembers, loading: teamLoading } = useTeamMembers();
 
-  // Mock data for demonstration
-  const pendingApprovals = [
-    { id: 1, employee: 'John Doe', type: 'Annual', dates: 'Feb 15-19, 2024', days: 5, submitted: '2 days ago' },
-    { id: 2, employee: 'Sarah Wilson', type: 'Sick', dates: 'Feb 10, 2024', days: 1, submitted: '1 day ago' },
-    { id: 3, employee: 'Mike Johnson', type: 'Personal', dates: 'Feb 20, 2024', days: 1, submitted: '3 hours ago' },
-  ];
+  if (!profile || profile.role !== 'manager') {
+    return null;
+  }
 
-  const teamStats = {
-    totalMembers: 12,
-    onLeave: 2,
-    pendingApprovals: 3,
-    approvedThisMonth: 8,
-  };
-
-  const teamCalendar = [
-    { employee: 'Alice Brown', type: 'Annual', dates: 'Feb 12-16', status: 'approved' },
-    { employee: 'David Lee', type: 'Sick', dates: 'Feb 14', status: 'approved' },
-    { employee: 'John Doe', type: 'Annual', dates: 'Feb 15-19', status: 'pending' },
-  ];
+  const pendingRequests = requests.filter(req => req.status === 'pending');
+  const approvedThisMonth = requests.filter(req => 
+    req.status === 'approved' && 
+    new Date(req.created_at).getMonth() === new Date().getMonth()
+  );
+  const currentlyOnLeave = requests.filter(req => {
+    const now = new Date();
+    const startDate = new Date(req.start_date);
+    const endDate = new Date(req.end_date);
+    return req.status === 'approved' && startDate <= now && endDate >= now;
+  });
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -51,6 +51,21 @@ export const ManagerDashboard: React.FC = () => {
       </Badge>
     );
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  if (requestsLoading || teamLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-corporate-orange" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -83,7 +98,7 @@ export const ManagerDashboard: React.FC = () => {
             <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{teamStats.totalMembers}</div>
+            <div className="text-2xl font-bold text-corporate-black">{teamMembers.length}</div>
             <p className="text-xs text-muted-foreground">
               Under your supervision
             </p>
@@ -96,7 +111,7 @@ export const ManagerDashboard: React.FC = () => {
             <Calendar className="h-4 w-4 text-corporate-orange" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{teamStats.onLeave}</div>
+            <div className="text-2xl font-bold text-corporate-black">{currentlyOnLeave.length}</div>
             <p className="text-xs text-muted-foreground">
               Team members away
             </p>
@@ -109,7 +124,7 @@ export const ManagerDashboard: React.FC = () => {
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{teamStats.pendingApprovals}</div>
+            <div className="text-2xl font-bold text-corporate-black">{pendingRequests.length}</div>
             <p className="text-xs text-muted-foreground">
               Require your attention
             </p>
@@ -122,7 +137,7 @@ export const ManagerDashboard: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-corporate-black">{teamStats.approvedThisMonth}</div>
+            <div className="text-2xl font-bold text-corporate-black">{approvedThisMonth.length}</div>
             <p className="text-xs text-muted-foreground">
               Leave requests approved
             </p>
@@ -131,106 +146,87 @@ export const ManagerDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Approvals */}
-        <Card className="bg-white shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-corporate-black flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              Pending Approvals
-            </CardTitle>
-            <CardDescription>Leave requests awaiting your decision</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pendingApprovals.map((request) => (
-                <div key={request.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium text-corporate-black">{request.employee}</h4>
-                      <p className="text-sm text-gray-600">{request.type} Leave</p>
-                    </div>
-                    <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
-                  </div>
-                  <div className="text-sm text-gray-600 mb-3">
-                    <p>Dates: {request.dates} ({request.days} days)</p>
-                    <p>Submitted: {request.submitted}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button size="sm" variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Leave Approvals */}
+        <LeaveApprovalCard 
+          requests={requests}
+          onApprove={approveRequest}
+          onReject={rejectRequest}
+        />
 
-        {/* Team Calendar */}
+        {/* Team Members */}
         <Card className="bg-white shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-corporate-black">Team Calendar</CardTitle>
-            <CardDescription>Upcoming leave schedules for your team</CardDescription>
+            <CardTitle className="text-lg font-semibold text-corporate-black">Team Members</CardTitle>
+            <CardDescription>Your direct reports and their current status</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {teamCalendar.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-corporate-orange" />
-                    <div>
-                      <p className="font-medium text-sm text-corporate-black">{entry.employee}</p>
-                      <p className="text-xs text-gray-600">{entry.type} - {entry.dates}</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(entry.status)}
+              {teamMembers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No team members assigned</p>
                 </div>
-              ))}
+              ) : (
+                teamMembers.map((member) => {
+                  const memberOnLeave = currentlyOnLeave.find(req => req.user_id === member.user_id);
+                  return (
+                    <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${memberOnLeave ? 'bg-orange-500' : 'bg-green-500'}`} />
+                        <div>
+                          <p className="font-medium text-sm text-corporate-black">
+                            {member.first_name} {member.last_name}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {member.position} • {member.employee_id}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className={memberOnLeave ? 'border-orange-200 text-orange-700 bg-orange-50' : 'border-green-200 text-green-700 bg-green-50'}
+                      >
+                        {memberOnLeave ? 'On Leave' : 'Available'}
+                      </Badge>
+                    </div>
+                  );
+                })
+              )}
             </div>
-            <Button variant="outline" className="w-full mt-4 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white">
-              View Full Calendar
-            </Button>
           </CardContent>
         </Card>
       </div>
 
-      {/* Team Overview */}
+      {/* Recent Leave History */}
       <Card className="bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-corporate-black">Team Overview</CardTitle>
-          <CardDescription>Current status of your team members</CardDescription>
+          <CardTitle className="text-lg font-semibold text-corporate-black">Recent Leave History</CardTitle>
+          <CardDescription>Latest leave requests from your team</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-green-800">Available</span>
+          <div className="space-y-4">
+            {requests.slice(0, 5).map((request) => (
+              <div key={request.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-corporate-orange" />
+                  <div>
+                    <p className="font-medium text-sm text-corporate-black">
+                      {request.profiles.first_name} {request.profiles.last_name}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {request.leave_type} • {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                    </p>
+                  </div>
+                </div>
+                {getStatusBadge(request.status)}
               </div>
-              <p className="text-2xl font-bold text-green-700">10</p>
-              <p className="text-sm text-green-600">Team members</p>
-            </div>
-            <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-orange-600" />
-                <span className="font-medium text-orange-800">On Leave</span>
+            ))}
+            {requests.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No leave requests yet</p>
               </div>
-              <p className="text-2xl font-bold text-orange-700">2</p>
-              <p className="text-sm text-orange-600">Team members</p>
-            </div>
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-800">Team Utilization</span>
-              </div>
-              <p className="text-2xl font-bold text-blue-700">83%</p>
-              <p className="text-sm text-blue-600">Availability rate</p>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
