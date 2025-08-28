@@ -1,1 +1,10 @@
 project_id = "niaiuneltiqshbwztgxj"
+
+[functions.send-leave-notification]
+verify_jwt = false
+
+[functions.leave-calculations] 
+verify_jwt = false
+
+[functions.leave-approval]
+verify_jwt = false
