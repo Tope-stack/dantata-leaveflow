@@ -14,16 +14,323 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      leave_approvals: {
+        Row: {
+          approved_at: string | null
+          approver_id: string
+          comments: string | null
+          created_at: string
+          id: string
+          leave_request_id: string
+          status: Database["public"]["Enums"]["approval_status"]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approver_id: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          leave_request_id: string
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approver_id?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          leave_request_id?: string
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_approvals_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "leave_approvals_leave_request_id_fkey"
+            columns: ["leave_request_id"]
+            isOneToOne: false
+            referencedRelation: "leave_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_balances: {
+        Row: {
+          available_days: number
+          created_at: string
+          id: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          total_days: number
+          updated_at: string
+          used_days: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          available_days?: number
+          created_at?: string
+          id?: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          user_id: string
+          year?: number
+        }
+        Update: {
+          available_days?: number
+          created_at?: string
+          id?: string
+          leave_type?: Database["public"]["Enums"]["leave_type"]
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      leave_policies: {
+        Row: {
+          carryover_days: number | null
+          created_at: string
+          days_per_year: number
+          id: string
+          is_active: boolean
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          max_consecutive_days: number | null
+          name: string
+          requires_approval: boolean
+          requires_documentation: boolean
+          updated_at: string
+        }
+        Insert: {
+          carryover_days?: number | null
+          created_at?: string
+          days_per_year: number
+          id?: string
+          is_active?: boolean
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          max_consecutive_days?: number | null
+          name: string
+          requires_approval?: boolean
+          requires_documentation?: boolean
+          updated_at?: string
+        }
+        Update: {
+          carryover_days?: number | null
+          created_at?: string
+          days_per_year?: number
+          id?: string
+          is_active?: boolean
+          leave_type?: Database["public"]["Enums"]["leave_type"]
+          max_consecutive_days?: number | null
+          name?: string
+          requires_approval?: boolean
+          requires_documentation?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leave_requests: {
+        Row: {
+          attachment_url: string | null
+          comments: string | null
+          created_at: string
+          end_date: string
+          id: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          reason: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["leave_status"]
+          total_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          comments?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          reason?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["leave_status"]
+          total_days: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          comments?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_type?: Database["public"]["Enums"]["leave_type"]
+          reason?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["leave_status"]
+          total_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string
+          email: string
+          employee_id: string
+          first_name: string
+          hire_date: string
+          id: string
+          is_active: boolean
+          last_name: string
+          manager_id: string | null
+          phone: string | null
+          position: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email: string
+          employee_id: string
+          first_name: string
+          hire_date: string
+          id?: string
+          is_active?: boolean
+          last_name: string
+          manager_id?: string | null
+          phone?: string | null
+          position: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string
+          employee_id?: string
+          first_name?: string
+          hire_date?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          manager_id?: string | null
+          phone?: string | null
+          position?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_default_leave_balances: {
+        Args: { user_uuid: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      approval_status: "pending" | "approved" | "rejected"
+      leave_status: "pending" | "approved" | "rejected" | "cancelled"
+      leave_type:
+        | "annual"
+        | "sick"
+        | "maternity"
+        | "paternity"
+        | "emergency"
+        | "unpaid"
+      user_role: "employee" | "manager" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +457,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      approval_status: ["pending", "approved", "rejected"],
+      leave_status: ["pending", "approved", "rejected", "cancelled"],
+      leave_type: [
+        "annual",
+        "sick",
+        "maternity",
+        "paternity",
+        "emergency",
+        "unpaid",
+      ],
+      user_role: ["employee", "manager", "admin"],
+    },
   },
 } as const
