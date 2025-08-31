@@ -20,6 +20,7 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sessionValid, setSessionValid] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -109,10 +110,29 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
     }
   };
 
+  const handleOpenDialog = async () => {
+    // Check session before opening dialog
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (!session || error) {
+        toast.error('Your session has expired. Please refresh the page and log in again.');
+        return;
+      }
+      setSessionValid(true);
+      setOpen(true);
+    } catch (error) {
+      console.error('Session check failed:', error);
+      toast.error('Authentication error. Please refresh the page and try again.');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-corporate-orange hover:bg-corporate-orange-dark text-white">
+        <Button 
+          className="bg-corporate-orange hover:bg-corporate-orange-dark text-white"
+          onClick={handleOpenDialog}
+        >
           <UserPlus className="h-4 w-4 mr-2" />
           Add User
         </Button>
