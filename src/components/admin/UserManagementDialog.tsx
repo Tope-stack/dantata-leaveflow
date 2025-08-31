@@ -20,7 +20,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sessionValid, setSessionValid] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -49,14 +48,6 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
     setLoading(true);
 
     try {
-      // Check if user is authenticated before making the request
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Your session has expired. Please log in again.');
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: formData.email,
@@ -100,39 +91,16 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      if (error.message?.includes('refresh_token_not_found')) {
-        toast.error('Your session has expired. Please log in again.');
-      } else {
-        toast.error('Failed to create user. Please try again.');
-      }
+      toast.error('Failed to create user');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOpenDialog = async () => {
-    // Check session before opening dialog
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (!session || error) {
-        toast.error('Your session has expired. Please refresh the page and log in again.');
-        return;
-      }
-      setSessionValid(true);
-      setOpen(true);
-    } catch (error) {
-      console.error('Session check failed:', error);
-      toast.error('Authentication error. Please refresh the page and try again.');
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          className="bg-corporate-orange hover:bg-corporate-orange-dark text-white"
-          onClick={handleOpenDialog}
-        >
+        <Button className="bg-corporate-orange hover:bg-corporate-orange-dark text-white">
           <UserPlus className="h-4 w-4 mr-2" />
           Add User
         </Button>
