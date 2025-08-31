@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, UserPlus, Edit2, Trash2, Shield, Building, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 
 interface Employee {
   id: string;
@@ -27,8 +29,12 @@ interface Employee {
 
 const UserManagementPage: React.FC = () => {
   const { toast } = useToast();
+  const { teamMembers, loading } = useTeamMembers();
   
-  // Mock data for demonstration
+  // Get managers for the UserManagementDialog
+  const managers = teamMembers.filter(member => member.role === 'manager');
+  
+  // Mock data for demonstration - in a real app, this would come from teamMembers
   const [employees, setEmployees] = useState<Employee[]>([
     {
       id: '1',
@@ -177,13 +183,13 @@ const UserManagementPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-corporate-black">User Management</h1>
           <p className="text-gray-600 mt-1">Manage employee accounts and permissions</p>
         </div>
-        <Button 
-          className="bg-corporate-orange hover:bg-corporate-orange-dark text-white"
-          onClick={() => handleOpenDialog('add')}
-        >
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
+        <UserManagementDialog 
+          managers={managers}
+          onUserCreated={() => {
+            // Refresh team members data
+            window.location.reload();
+          }}
+        />
       </div>
 
       {/* Stats Cards */}
