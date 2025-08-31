@@ -48,32 +48,51 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email: formData.email,
-          password: formData.password,
+      // Create user account
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: formData.email,
+        password: formData.password,
+        email_confirm: true,
+        user_metadata: {
           first_name: formData.first_name,
           last_name: formData.last_name,
           department: formData.department,
           position: formData.position,
-          role: formData.role,
-          manager_id: formData.manager_id || null,
           hire_date: formData.hire_date
         }
       });
 
-      if (error) {
-        console.error('Function invocation error:', error);
-        toast.error('Failed to create user: ' + error.message);
+      if (authError) {
+        toast.error('Failed to create user account: ' + authError.message);
         return;
       }
 
-      if (data?.error) {
-        toast.error(data.error);
+      if (!authData.user) {
+        toast.error('Failed to create user account');
         return;
       }
 
-      if (data?.success) {
+      // Update profile with role and manager assignment
+      const profileUpdates: any = {
+        role: formData.role,
+        department: formData.department,
+        position: formData.position,
+        hire_date: formData.hire_date
+      };
+
+      if (formData.manager_id && formData.role === 'employee') {
+        profileUpdates.manager_id = formData.manager_id;
+      }
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('user_id', authData.user.id);
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        toast.error('User created but failed to update profile');
+      } else {
         toast.success('User created successfully');
         setOpen(false);
         setFormData({
