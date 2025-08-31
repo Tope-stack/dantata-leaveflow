@@ -186,8 +186,11 @@ const UserManagementPage: React.FC = () => {
         <UserManagementDialog 
           managers={managers}
           onUserCreated={() => {
-            // Refresh team members data
-            window.location.reload();
+            // Refresh team members data - using toast instead of reload
+            toast({
+              title: 'Employee Added',
+              description: 'The new employee has been successfully added to the system.',
+            });
           }}
         />
       </div>
