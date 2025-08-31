@@ -48,6 +48,14 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
     setLoading(true);
 
     try {
+      // Check if user is authenticated before making the request
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Your session has expired. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: formData.email,
@@ -91,7 +99,11 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      toast.error('Failed to create user');
+      if (error.message?.includes('refresh_token_not_found')) {
+        toast.error('Your session has expired. Please log in again.');
+      } else {
+        toast.error('Failed to create user. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
