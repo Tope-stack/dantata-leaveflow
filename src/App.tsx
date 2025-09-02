@@ -18,6 +18,7 @@ import SystemReportsPage from "./pages/SystemReportsPage";
 import TeamCalendarPage from "./pages/TeamCalendarPage";
 import TeamReportsPage from "./pages/TeamReportsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import IntegrationsPage from "./pages/IntegrationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/user-management" element={<UserManagementPage />} />
               <Route path="/leave-policies" element={<LeavePoliciesPage />} />
               <Route path="/system-reports" element={<SystemReportsPage />} />
+              <Route path="/integrations" element={<IntegrationsPage />} />
               <Route path="/audit-logs" element={<AuditLogsPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

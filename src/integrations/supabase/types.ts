@@ -310,6 +310,80 @@ export type Database = {
           },
         ]
       }
+      zoho_connections: {
+        Row: {
+          access_token: string
+          accounts_base_url: string
+          created_at: string
+          expires_at: string
+          id: string
+          org_id: string
+          people_base_url: string
+          refresh_token: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          accounts_base_url?: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          org_id: string
+          people_base_url?: string
+          refresh_token: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          accounts_base_url?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          org_id?: string
+          people_base_url?: string
+          refresh_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zoho_employee_map: {
+        Row: {
+          app_user_id: string
+          created_at: string
+          email: string
+          erecno: string | null
+          id: string
+          updated_at: string
+          zoho_emp_id: string | null
+        }
+        Insert: {
+          app_user_id: string
+          created_at?: string
+          email: string
+          erecno?: string | null
+          id?: string
+          updated_at?: string
+          zoho_emp_id?: string | null
+        }
+        Update: {
+          app_user_id?: string
+          created_at?: string
+          email?: string
+          erecno?: string | null
+          id?: string
+          updated_at?: string
+          zoho_emp_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zoho_employee_map_app_user_id_fkey"
+            columns: ["app_user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
