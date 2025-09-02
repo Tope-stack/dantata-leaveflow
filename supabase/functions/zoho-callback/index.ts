@@ -11,11 +11,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const code = url.searchParams.get('code');
-    const state = url.searchParams.get('state');
-    const location = url.searchParams.get('location') || 'https://accounts.zoho.com';
-    const accountsServer = url.searchParams.get('accounts-server') || 'https://accounts.zoho.com';
+    let code, state, location, accountsServer;
+    
+    // Handle both URL parameters (direct OAuth callback) and POST body (frontend callback)
+    if (req.method === 'POST') {
+      const body = await req.json();
+      code = body.code;
+      state = body.state;
+      location = body.location || 'https://accounts.zoho.com';
+      accountsServer = body['accounts-server'] || 'https://accounts.zoho.com';
+    } else {
+      const url = new URL(req.url);
+      code = url.searchParams.get('code');
+      state = url.searchParams.get('state');
+      location = url.searchParams.get('location') || 'https://accounts.zoho.com';
+      accountsServer = url.searchParams.get('accounts-server') || 'https://accounts.zoho.com';
+    }
 
     if (!code || !state) {
       console.error('Missing code or state parameter');
@@ -109,15 +120,26 @@ Deno.serve(async (req) => {
 
     console.log('Successfully stored Zoho connection:', connection.id);
 
-    // Redirect to success page
-    const redirectUrl = new URL('/user-management?zoho=connected', 'https://niaiuneltiqshbwztgxj.supabase.co');
-    
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': redirectUrl.toString()
-      }
-    });
+    // Handle response based on request method
+    if (req.method === 'POST') {
+      // Return JSON response for frontend callback
+      return new Response(
+        JSON.stringify({ success: true, connection_id: connection.id }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    } else {
+      // Redirect for direct OAuth callback
+      const redirectUrl = new URL('/integrations?zoho=connected', 'https://dantata-leaveflow.vercel.app');
+      
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': redirectUrl.toString()
+        }
+      });
+    }
 
   } catch (error) {
     console.error('Error in zoho-callback:', error);
