@@ -68,22 +68,22 @@ export const AppSidebar: React.FC = () => {
   const menuItems = getMenuItems(profile?.role || 'employee');
 
   return (
-    <Sidebar className="border-r border-gray-200">
-      <SidebarContent className="bg-corporate-black">
-        <div className="p-6 border-b border-corporate-gray-dark">
+    <Sidebar className="border-r" collapsible="icon">
+      <SidebarContent>
+        <div className="p-6 border-b">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-corporate-orange rounded-lg flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-white" />
+            <div className="h-10 w-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-sidebar-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-semibold text-white">LMS</h2>
-              <p className="text-xs text-gray-400">Leave Management</p>
+              <h2 className="font-semibold text-sidebar-foreground">LMS</h2>
+              <p className="text-xs text-sidebar-foreground/70">Leave Management</p>
             </div>
           </div>
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-400 uppercase tracking-wider text-xs">
+          <SidebarGroupLabel>
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -96,8 +96,8 @@ export const AppSidebar: React.FC = () => {
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                           isActive
-                            ? 'bg-corporate-orange text-white font-medium'
-                            : 'text-gray-300 hover:bg-corporate-gray-dark hover:text-white'
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                         }`
                       }
                       end
@@ -112,8 +112,8 @@ export const AppSidebar: React.FC = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-6 border-t border-corporate-gray-dark">
-          <div className="text-xs text-gray-400">
+        <div className="mt-auto p-6 border-t">
+          <div className="text-xs text-sidebar-foreground/70">
             <p>© 2024 Dantata Town Developers</p>
             <p className="mt-1">Version 1.0.0</p>
           </div>
