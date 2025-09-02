@@ -11,7 +11,8 @@ import {
   Clock,
   CheckSquare,
   Shield,
-  TrendingUp
+  TrendingUp,
+  Plug
 } from 'lucide-react';
 import {
   Sidebar,
@@ -45,6 +46,7 @@ const getMenuItems = (role: UserRole) => {
   const adminItems = [
     { title: 'User Management', url: '/user-management', icon: Users },
     { title: 'Leave Policies', url: '/leave-policies', icon: Settings },
+    { title: 'Integrations', url: '/integrations', icon: Plug },
     { title: 'System Reports', url: '/system-reports', icon: TrendingUp },
     { title: 'Audit Logs', url: '/audit-logs', icon: Shield },
   ];
