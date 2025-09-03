@@ -13,23 +13,31 @@ Deno.serve(async (req) => {
   try {
     let code, state, location, accountsServer;
     
+    // Debug: Log request details
+    console.log('Request method:', req.method);
+    console.log('Request URL:', req.url);
+    
     // Handle both URL parameters (direct OAuth callback) and POST body (frontend callback)
     if (req.method === 'POST') {
       const body = await req.json();
+      console.log('POST body received:', { ...body, code: body.code ? 'present' : 'missing', state: body.state ? 'present' : 'missing' });
       code = body.code;
       state = body.state;
       location = body.location || 'https://accounts.zoho.com';
       accountsServer = body['accounts-server'] || 'https://accounts.zoho.com';
     } else {
       const url = new URL(req.url);
+      console.log('GET parameters:', Object.fromEntries(url.searchParams));
       code = url.searchParams.get('code');
       state = url.searchParams.get('state');
       location = url.searchParams.get('location') || 'https://accounts.zoho.com';
       accountsServer = url.searchParams.get('accounts-server') || 'https://accounts.zoho.com';
     }
 
+    console.log('Extracted parameters:', { code: code ? 'present' : 'missing', state: state ? 'present' : 'missing', location, accountsServer });
+
     if (!code || !state) {
-      console.error('Missing code or state parameter');
+      console.error('Missing code or state parameter:', { code: !!code, state: !!state });
       return new Response('Missing required parameters', { status: 400 });
     }
 

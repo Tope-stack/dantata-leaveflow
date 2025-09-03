@@ -9,13 +9,19 @@ const ZohoCallbackPage: React.FC = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Debug: Log all URL parameters
+      console.log('Callback URL:', window.location.href);
+      console.log('All search params:', Object.fromEntries(searchParams));
+      
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const location = searchParams.get('location') || 'https://accounts.zoho.com';
       const accountsServer = searchParams.get('accounts-server') || 'https://accounts.zoho.com';
 
+      console.log('Extracted parameters:', { code: code ? 'present' : 'missing', state: state ? 'present' : 'missing', location, accountsServer });
+
       if (!code || !state) {
-        console.error('Missing code or state parameter');
+        console.error('Missing code or state parameter:', { code: !!code, state: !!state });
         navigate('/integrations?error=missing_params');
         return;
       }
