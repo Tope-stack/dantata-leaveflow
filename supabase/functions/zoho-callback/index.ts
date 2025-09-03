@@ -11,33 +11,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    let code, state, location, accountsServer;
-    
-    // Debug: Log request details
-    console.log('Request method:', req.method);
-    console.log('Request URL:', req.url);
-    
-    // Handle both URL parameters (direct OAuth callback) and POST body (frontend callback)
-    if (req.method === 'POST') {
-      const body = await req.json();
-      console.log('POST body received:', { ...body, code: body.code ? 'present' : 'missing', state: body.state ? 'present' : 'missing' });
-      code = body.code;
-      state = body.state;
-      location = body.location || 'https://accounts.zoho.com';
-      accountsServer = body['accounts-server'] || 'https://accounts.zoho.com';
-    } else {
-      const url = new URL(req.url);
-      console.log('GET parameters:', Object.fromEntries(url.searchParams));
-      code = url.searchParams.get('code');
-      state = url.searchParams.get('state');
-      location = url.searchParams.get('location') || 'https://accounts.zoho.com';
-      accountsServer = url.searchParams.get('accounts-server') || 'https://accounts.zoho.com';
-    }
-
-    console.log('Extracted parameters:', { code: code ? 'present' : 'missing', state: state ? 'present' : 'missing', location, accountsServer });
+    const url = new URL(req.url);
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    const location = url.searchParams.get('location') || 'https://accounts.zoho.com';
+    const accountsServer = url.searchParams.get('accounts-server') || 'https://accounts.zoho.com';
 
     if (!code || !state) {
-      console.error('Missing code or state parameter:', { code: !!code, state: !!state });
+      console.error('Missing code or state parameter');
       return new Response('Missing required parameters', { status: 400 });
     }
 
@@ -88,28 +69,6 @@ Deno.serve(async (req) => {
     const tokens = await tokenResponse.json();
     console.log('Received tokens:', { ...tokens, access_token: '***', refresh_token: '***' });
 
-    // Check if token response contains an error
-    if (tokens.error) {
-      console.error('Token exchange error:', tokens.error, tokens.error_description);
-      return new Response(`Token exchange failed: ${tokens.error}`, { status: 400 });
-    }
-
-    // Validate required token fields
-    if (!tokens.access_token) {
-      console.error('Missing access_token in response');
-      return new Response('Invalid token response: missing access_token', { status: 400 });
-    }
-
-    if (!tokens.refresh_token) {
-      console.error('Missing refresh_token in response');
-      return new Response('Invalid token response: missing refresh_token', { status: 400 });
-    }
-
-    if (!tokens.expires_in || typeof tokens.expires_in !== 'number') {
-      console.error('Missing or invalid expires_in in response:', tokens.expires_in);
-      return new Response('Invalid token response: missing expires_in', { status: 400 });
-    }
-
     // Determine Zoho People base URL based on location
     let peopleBaseUrl = 'https://people.zoho.com';
     if (location.includes('zoho.eu')) {
@@ -126,7 +85,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Calculate expires_at timestamp safely
+    // Calculate expires_at timestamp
     const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000));
 
     // Store the connection
@@ -150,26 +109,15 @@ Deno.serve(async (req) => {
 
     console.log('Successfully stored Zoho connection:', connection.id);
 
-    // Handle response based on request method
-    if (req.method === 'POST') {
-      // Return JSON response for frontend callback
-      return new Response(
-        JSON.stringify({ success: true, connection_id: connection.id }), 
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    } else {
-      // Redirect for direct OAuth callback
-      const redirectUrl = new URL('/integrations?zoho=connected', 'https://dantata-leaveflow.vercel.app');
-      
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': redirectUrl.toString()
-        }
-      });
-    }
+    // Redirect to success page
+    const redirectUrl = new URL('/user-management?zoho=connected', 'https://niaiuneltiqshbwztgxj.supabase.co');
+    
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': redirectUrl.toString()
+      }
+    });
 
   } catch (error) {
     console.error('Error in zoho-callback:', error);

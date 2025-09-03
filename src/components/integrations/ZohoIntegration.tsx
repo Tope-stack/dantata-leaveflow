@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSearchParams } from 'react-router-dom';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface ZohoConnection {
@@ -24,46 +23,10 @@ export const ZohoIntegration: React.FC = () => {
   const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
   const { session } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     fetchConnection();
-    
-    // Handle OAuth callback parameters
-    const zohoParam = searchParams.get('zoho');
-    const errorParam = searchParams.get('error');
-    
-    if (zohoParam === 'connected') {
-      toast({
-        title: 'Success',
-        description: 'Zoho People connected successfully!',
-      });
-      // Clear the URL parameter
-      setSearchParams(new URLSearchParams());
-    } else if (errorParam) {
-      let errorMessage = 'Failed to connect to Zoho People';
-      
-      switch (errorParam) {
-        case 'missing_params':
-          errorMessage = 'Missing required parameters from Zoho callback';
-          break;
-        case 'callback_failed':
-          errorMessage = 'Zoho callback processing failed';
-          break;
-        case 'unexpected':
-          errorMessage = 'An unexpected error occurred during connection';
-          break;
-      }
-      
-      toast({
-        title: 'Connection Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      // Clear the URL parameter
-      setSearchParams(new URLSearchParams());
-    }
-  }, [searchParams, setSearchParams, toast]);
+  }, []);
 
   const fetchConnection = async () => {
     try {
@@ -112,13 +75,28 @@ export const ZohoIntegration: React.FC = () => {
       }
 
       if (data?.authUrl) {
-        // Open authorization URL in same window for better user experience
-        window.location.href = data.authUrl;
+        // Open authorization URL in new window
+        window.open(data.authUrl, '_blank', 'width=600,height=700');
         
         toast({
-          title: 'Redirecting to Zoho',
-          description: 'Please complete authorization to connect your account',
+          title: 'Authorization Required',
+          description: 'Please complete authorization in the new window',
         });
+
+        // Poll for connection status
+        const pollInterval = setInterval(async () => {
+          await fetchConnection();
+          if (connection) {
+            clearInterval(pollInterval);
+            toast({
+              title: 'Success',
+              description: 'Zoho People connected successfully!',
+            });
+          }
+        }, 3000);
+
+        // Clear interval after 2 minutes
+        setTimeout(() => clearInterval(pollInterval), 120000);
       }
     } catch (error: any) {
       console.error('Error connecting to Zoho:', error);
