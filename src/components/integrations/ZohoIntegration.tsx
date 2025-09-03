@@ -132,37 +132,6 @@ export const ZohoIntegration: React.FC = () => {
     }
   };
 
-  const handleDisconnect = async () => {
-    if (!session) return;
-
-    setConnecting(true);
-    try {
-      const { error } = await supabase
-        .from('zoho_connections')
-        .delete()
-        .eq('org_id', session.user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setConnection(null);
-      toast({
-        title: 'Success',
-        description: 'Zoho People disconnected successfully',
-      });
-    } catch (error: any) {
-      console.error('Error disconnecting from Zoho:', error);
-      toast({
-        title: 'Disconnection Failed',
-        description: error.message || 'Failed to disconnect from Zoho People',
-        variant: 'destructive',
-      });
-    } finally {
-      setConnecting(false);
-    }
-  };
-
   const handleSync = async (syncType: 'leaves' | 'attendance' | 'holidays') => {
     if (!session) return;
 
@@ -339,59 +308,21 @@ export const ZohoIntegration: React.FC = () => {
             </div>
 
             {isTokenExpired() && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <Button 
-                  onClick={handleConnect} 
-                  disabled={connecting}
-                  variant="outline"
-                >
-                  {connecting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Connecting...
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Connect Anew
-                    </>
-                  )}
-                </Button>
-                <Button 
-                  onClick={handleDisconnect} 
-                  disabled={connecting}
-                  variant="destructive"
-                >
-                  {connecting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Disconnecting...
-                    </>
-                  ) : (
-                    'Disconnect'
-                  )}
-                </Button>
-              </div>
-            )}
-
-            {!isTokenExpired() && (
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleDisconnect} 
-                  disabled={connecting}
-                  variant="destructive"
-                  size="sm"
-                >
-                  {connecting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Disconnecting...
-                    </>
-                  ) : (
-                    'Disconnect'
-                  )}
-                </Button>
-              </div>
+              <Button 
+                onClick={handleConnect} 
+                disabled={connecting}
+                variant="outline"
+                className="w-full"
+              >
+                {connecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Reconnecting...
+                  </>
+                ) : (
+                  'Reconnect Zoho People'
+                )}
+              </Button>
             )}
 
             <div className="text-xs text-muted-foreground space-y-1">
