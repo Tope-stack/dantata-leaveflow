@@ -19,6 +19,7 @@ import TeamCalendarPage from "./pages/TeamCalendarPage";
 import TeamReportsPage from "./pages/TeamReportsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
+import ZohoCallbackPage from "./pages/ZohoCallbackPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/system-reports" element={<SystemReportsPage />} />
               <Route path="/integrations" element={<IntegrationsPage />} />
               <Route path="/audit-logs" element={<AuditLogsPage />} />
+              <Route path="/oauthredirect" element={<ZohoCallbackPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

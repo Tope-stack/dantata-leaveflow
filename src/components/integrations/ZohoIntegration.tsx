@@ -26,6 +26,17 @@ export const ZohoIntegration: React.FC = () => {
 
   useEffect(() => {
     fetchConnection();
+    
+    // Check for success parameter from OAuth callback
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connected') === '1') {
+      toast({
+        title: 'Success',
+        description: 'Zoho People connected successfully!',
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/integrations');
+    }
   }, []);
 
   const fetchConnection = async () => {

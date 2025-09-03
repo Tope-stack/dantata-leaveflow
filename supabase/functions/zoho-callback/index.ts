@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
     console.log('Successfully stored Zoho connection:', connection.id);
 
     // Redirect to success page
-    const redirectUrl = new URL('/user-management?zoho=connected', 'https://niaiuneltiqshbwztgxj.supabase.co');
+    const redirectUrl = new URL('/integrations?connected=1', 'https://dantata-leaveflow.vercel.app');
     
     return new Response(null, {
       status: 302,
