@@ -80,6 +80,28 @@ Deno.serve(async (req) => {
     const tokens = await tokenResponse.json();
     console.log('Received tokens:', { ...tokens, access_token: '***', refresh_token: '***' });
 
+    // Check if token response contains an error
+    if (tokens.error) {
+      console.error('Token exchange error:', tokens.error, tokens.error_description);
+      return new Response(`Token exchange failed: ${tokens.error}`, { status: 400 });
+    }
+
+    // Validate required token fields
+    if (!tokens.access_token) {
+      console.error('Missing access_token in response');
+      return new Response('Invalid token response: missing access_token', { status: 400 });
+    }
+
+    if (!tokens.refresh_token) {
+      console.error('Missing refresh_token in response');
+      return new Response('Invalid token response: missing refresh_token', { status: 400 });
+    }
+
+    if (!tokens.expires_in || typeof tokens.expires_in !== 'number') {
+      console.error('Missing or invalid expires_in in response:', tokens.expires_in);
+      return new Response('Invalid token response: missing expires_in', { status: 400 });
+    }
+
     // Determine Zoho People base URL based on location
     let peopleBaseUrl = 'https://people.zoho.com';
     if (location.includes('zoho.eu')) {
@@ -96,7 +118,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Calculate expires_at timestamp
+    // Calculate expires_at timestamp safely
     const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000));
 
     // Store the connection
