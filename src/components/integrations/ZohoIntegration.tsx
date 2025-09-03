@@ -86,28 +86,8 @@ export const ZohoIntegration: React.FC = () => {
       }
 
       if (data?.authUrl) {
-        // Open authorization URL in new window
-        window.open(data.authUrl, '_blank', 'width=600,height=700');
-        
-        toast({
-          title: 'Authorization Required',
-          description: 'Please complete authorization in the new window',
-        });
-
-        // Poll for connection status
-        const pollInterval = setInterval(async () => {
-          await fetchConnection();
-          if (connection) {
-            clearInterval(pollInterval);
-            toast({
-              title: 'Success',
-              description: 'Zoho People connected successfully!',
-            });
-          }
-        }, 3000);
-
-        // Clear interval after 2 minutes
-        setTimeout(() => clearInterval(pollInterval), 120000);
+        // Redirect to authorization URL in same window
+        window.location.href = data.authUrl;
       }
     } catch (error: any) {
       console.error('Error connecting to Zoho:', error);
