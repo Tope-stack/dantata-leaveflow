@@ -75,19 +75,29 @@ export const ZohoIntegration: React.FC = () => {
 
     setConnecting(true);
     try {
+      console.log('Calling zoho-authorize function...');
+      console.log('Session token:', session.access_token ? 'Present' : 'Missing');
+      
       const { data, error } = await supabase.functions.invoke('zoho-authorize', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
 
+      console.log('Function response:', { data, error });
+
       if (error) {
+        console.error('Function error:', error);
         throw error;
       }
 
       if (data?.authUrl) {
+        console.log('Redirecting to auth URL:', data.authUrl);
         // Redirect to authorization URL in same window
         window.location.href = data.authUrl;
+      } else {
+        console.error('No auth URL received:', data);
+        throw new Error('No authorization URL received from server');
       }
     } catch (error: any) {
       console.error('Error connecting to Zoho:', error);
