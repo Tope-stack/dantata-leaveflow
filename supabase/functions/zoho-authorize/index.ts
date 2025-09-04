@@ -13,11 +13,32 @@ Deno.serve(async (req) => {
   try {
     const ZOHO_CLIENT_ID = Deno.env.get('ZOHO_CLIENT_ID');
     const ZOHO_REDIRECT_URI = Deno.env.get('ZOHO_REDIRECT_URI');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+
+    console.log('Environment check:', {
+      hasClientId: !!ZOHO_CLIENT_ID,
+      hasRedirectUri: !!ZOHO_REDIRECT_URI,
+      hasSupabaseUrl: !!SUPABASE_URL,
+      hasSupabaseAnon: !!SUPABASE_ANON_KEY,
+      redirectUri: ZOHO_REDIRECT_URI
+    });
 
     if (!ZOHO_CLIENT_ID || !ZOHO_REDIRECT_URI) {
-      console.error('Missing Zoho credentials');
+      console.error('Missing Zoho credentials', { ZOHO_CLIENT_ID: !!ZOHO_CLIENT_ID, ZOHO_REDIRECT_URI: !!ZOHO_REDIRECT_URI });
       return new Response(
         JSON.stringify({ error: 'Zoho credentials not configured' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error('Missing Supabase credentials', { SUPABASE_URL: !!SUPABASE_URL, SUPABASE_ANON_KEY: !!SUPABASE_ANON_KEY });
+      return new Response(
+        JSON.stringify({ error: 'Supabase credentials not configured' }), 
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -39,8 +60,8 @@ Deno.serve(async (req) => {
 
     // Initialize Supabase client
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
       { global: { headers: { Authorization: authHeader } } }
     );
 
