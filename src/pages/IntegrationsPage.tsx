@@ -268,7 +268,7 @@ const IntegrationsPage = () => {
         </CardContent>
       </Card>
 
-      <EmployeeMappingTable isConnected={isConnected} />
+      <EmployeeMappingTable isConnected={!!isConnected} />
     </div>
   );
 };
