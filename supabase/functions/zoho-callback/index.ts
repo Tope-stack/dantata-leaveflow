@@ -19,7 +19,10 @@ Deno.serve(async (req) => {
 
     if (!code || !state) {
       console.error('Missing code or state parameter');
-      return new Response('Missing required parameters', { status: 400 });
+      return new Response('Missing required parameters', { 
+        status: 400, 
+        headers: corsHeaders 
+      });
     }
 
     // Decode state
@@ -28,7 +31,10 @@ Deno.serve(async (req) => {
       stateData = JSON.parse(atob(state));
     } catch {
       console.error('Invalid state parameter');
-      return new Response('Invalid state parameter', { status: 400 });
+      return new Response('Invalid state parameter', { 
+        status: 400, 
+        headers: corsHeaders 
+      });
     }
 
     const ZOHO_CLIENT_ID = Deno.env.get('ZOHO_CLIENT_ID');
@@ -37,7 +43,10 @@ Deno.serve(async (req) => {
 
     if (!ZOHO_CLIENT_ID || !ZOHO_CLIENT_SECRET || !ZOHO_REDIRECT_URI) {
       console.error('Missing Zoho credentials');
-      return new Response('Server configuration error', { status: 500 });
+      return new Response('Server configuration error', { 
+        status: 500, 
+        headers: corsHeaders 
+      });
     }
 
     // Exchange code for tokens
@@ -63,7 +72,10 @@ Deno.serve(async (req) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('Token exchange failed:', errorText);
-      return new Response('Token exchange failed', { status: 400 });
+      return new Response('Token exchange failed', { 
+        status: 400, 
+        headers: corsHeaders 
+      });
     }
 
     const tokens = await tokenResponse.json();
@@ -104,7 +116,10 @@ Deno.serve(async (req) => {
 
     if (connectionError) {
       console.error('Failed to store connection:', connectionError);
-      return new Response('Failed to store connection', { status: 500 });
+      return new Response('Failed to store connection', { 
+        status: 500, 
+        headers: corsHeaders 
+      });
     }
 
     console.log('Successfully stored Zoho connection:', connection.id);
@@ -115,12 +130,16 @@ Deno.serve(async (req) => {
     return new Response(null, {
       status: 302,
       headers: {
+        ...corsHeaders,
         'Location': redirectUrl.toString()
       }
     });
 
   } catch (error) {
     console.error('Error in zoho-callback:', error);
-    return new Response('Internal server error', { status: 500 });
+    return new Response('Internal server error', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
   }
 });
