@@ -105,7 +105,7 @@ serve(async (req) => {
     }
 
     // Redirect to success page
-    const redirectUrl = `${Deno.env.get('SUPABASE_URL')?.replace('niaiuneltiqshbwztgxj.supabase.co', 'niaiuneltiqshbwztgxj.lovableproject.com') ?? ''}/integrations?success=true`
+    const redirectUrl = 'https://niaiuneltiqshbwztgxj.lovableproject.com/zoho-callback?success=true'
     
     return new Response(null, {
       status: 302,

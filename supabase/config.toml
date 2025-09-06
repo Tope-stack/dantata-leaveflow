@@ -8,3 +8,21 @@ verify_jwt = false
 
 [functions.leave-approval]
 verify_jwt = false
+
+[functions.zoho-authorize]
+verify_jwt = true
+
+[functions.zoho-callback]
+verify_jwt = false
+
+[functions.zoho-leaves]
+verify_jwt = true
+
+[functions.zoho-create-leave]
+verify_jwt = true
+
+[functions.zoho-attendance]
+verify_jwt = true
+
+[functions.zoho-holidays]
+verify_jwt = true
