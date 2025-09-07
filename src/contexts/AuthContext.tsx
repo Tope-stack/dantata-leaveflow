@@ -27,7 +27,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, userData?: any) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, selectedRole: UserRole) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
   isAuthenticated: boolean;
 }
@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, selectedRole: UserRole) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -169,14 +169,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Welcome back!",
-        description: "You have been successfully signed in."
-      });
+      return { error };
     }
 
-    return { error };
+    // After successful authentication, verify the role
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session?.user) {
+        const userProfile = await fetchProfile(session.session.user.id);
+        
+        if (userProfile && userProfile.role !== selectedRole) {
+          // Role mismatch - sign out and show error
+          await supabase.auth.signOut();
+          const roleError = {
+            message: `Access denied. Your account is assigned the role "${userProfile.role}" but you attempted to sign in as "${selectedRole}". Please select the correct role and try again.`
+          };
+          
+          toast({
+            title: "Access Denied",
+            description: roleError.message,
+            variant: "destructive"
+          });
+          
+          return { error: roleError };
+        }
+        
+        if (!userProfile) {
+          await supabase.auth.signOut();
+          const profileError = {
+            message: "Unable to verify user profile. Please contact your administrator."
+          };
+          
+          toast({
+            title: "Profile Error",
+            description: profileError.message,
+            variant: "destructive"
+          });
+          
+          return { error: profileError };
+        }
+      }
+    } catch (roleCheckError) {
+      await supabase.auth.signOut();
+      const checkError = {
+        message: "Unable to verify user role. Please try again."
+      };
+      
+      toast({
+        title: "Verification Error", 
+        description: checkError.message,
+        variant: "destructive"
+      });
+      
+      return { error: checkError };
+    }
+
+    toast({
+      title: "Welcome back!",
+      description: "You have been successfully signed in."
+    });
+
+    return { error: null };
   };
 
   const signOut = async () => {
