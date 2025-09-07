@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,129 +8,133 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserPlus, Edit2, Trash2, Shield, Building, Mail, Phone } from 'lucide-react';
+import { Users, UserPlus, Edit2, Trash2, Shield, Building, Mail, Phone, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 
 interface Employee {
   id: string;
-  name: string;
+  user_id: string;
+  employee_id: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  phone: string;
+  phone?: string;
   department: string;
-  role: 'employee' | 'manager' | 'hr' | 'admin';
-  status: 'active' | 'inactive';
-  joinDate: string;
-  managerId?: string;
-  annualLeaveBalance: number;
-  sickLeaveBalance: number;
+  position: string;
+  role: 'employee' | 'manager' | 'admin';
+  is_active: boolean;
+  hire_date: string;
+  manager_id?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const UserManagementPage: React.FC = () => {
   const { toast } = useToast();
-  
-  // Mock data for demonstration
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: '1',
-      name: 'John Smith',
-      email: 'john.smith@company.com',
-      phone: '+1 (555) 123-4567',
-      department: 'Engineering',
-      role: 'employee',
-      status: 'active',
-      joinDate: '2023-01-15',
-      managerId: '2',
-      annualLeaveBalance: 18,
-      sickLeaveBalance: 12
-    },
-    {
-      id: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      phone: '+1 (555) 234-5678',
-      department: 'Engineering',
-      role: 'manager',
-      status: 'active',
-      joinDate: '2022-06-10',
-      annualLeaveBalance: 25,
-      sickLeaveBalance: 15
-    },
-    {
-      id: '3',
-      name: 'Mike Davis',
-      email: 'mike.davis@company.com',
-      phone: '+1 (555) 345-6789',
-      department: 'Finance',
-      role: 'employee',
-      status: 'active',
-      joinDate: '2023-03-20',
-      managerId: '4',
-      annualLeaveBalance: 15,
-      sickLeaveBalance: 10
-    },
-    {
-      id: '4',
-      name: 'Emily Brown',
-      email: 'emily.brown@company.com',
-      phone: '+1 (555) 456-7890',
-      department: 'HR',
-      role: 'hr',
-      status: 'active',
-      joinDate: '2021-08-01',
-      annualLeaveBalance: 22,
-      sickLeaveBalance: 18
-    }
-  ]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { teamMembers: managers } = useTeamMembers();
 
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<'add' | 'edit' | 'delete'>('add');
+  const [dialogType, setDialogType] = useState<'edit' | 'delete'>('edit');
   const [formData, setFormData] = useState<Partial<Employee>>({});
 
-  const departments = ['Engineering', 'Finance', 'HR', 'Marketing', 'Sales', 'Operations'];
-  const roles = ['employee', 'manager', 'hr', 'admin'];
+  const departments = ['Engineering', 'Finance', 'Human Resources', 'Marketing', 'Sales', 'Operations', 'IT', 'Legal'];
+  const roles = ['employee', 'manager', 'admin'];
 
-  const handleOpenDialog = (type: 'add' | 'edit' | 'delete', employee?: Employee) => {
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('first_name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching employees:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch employees',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch employees',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenDialog = (type: 'edit' | 'delete', employee: Employee) => {
     setDialogType(type);
-    setSelectedEmployee(employee || null);
-    setFormData(employee || {
-      name: '',
-      email: '',
-      phone: '',
-      department: '',
-      role: 'employee',
-      status: 'active',
-      annualLeaveBalance: 20,
-      sickLeaveBalance: 12
-    });
+    setSelectedEmployee(employee);
+    setFormData(employee);
     setDialogOpen(true);
   };
 
-  const handleSubmit = () => {
-    if (dialogType === 'add') {
-      const newEmployee: Employee = {
-        ...formData as Employee,
-        id: Math.random().toString(36).substr(2, 9),
-        joinDate: new Date().toISOString().split('T')[0]
-      };
-      setEmployees(prev => [...prev, newEmployee]);
+  const handleSubmit = async () => {
+    if (!selectedEmployee) return;
+
+    try {
+      if (dialogType === 'edit') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            email: formData.email,
+            phone: formData.phone,
+            department: formData.department,
+            position: formData.position,
+            role: formData.role,
+            is_active: formData.is_active,
+            manager_id: formData.manager_id
+          })
+          .eq('id', selectedEmployee.id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Employee Updated',
+          description: `${selectedEmployee.first_name} ${selectedEmployee.last_name} has been updated successfully.`,
+        });
+        fetchEmployees();
+      } else if (dialogType === 'delete') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ is_active: false })
+          .eq('id', selectedEmployee.id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Employee Deactivated',
+          description: `${selectedEmployee.first_name} ${selectedEmployee.last_name} has been deactivated.`,
+          variant: 'destructive',
+        });
+        fetchEmployees();
+      }
+    } catch (error) {
+      console.error('Error updating employee:', error);
       toast({
-        title: 'Employee Added',
-        description: `${newEmployee.name} has been added successfully.`,
-      });
-    } else if (dialogType === 'edit' && selectedEmployee) {
-      setEmployees(prev => 
-        prev.map(emp => emp.id === selectedEmployee.id ? { ...emp, ...formData } : emp)
-      );
-      toast({
-        title: 'Employee Updated',
-        description: `${selectedEmployee.name} has been updated successfully.`,
-      });
-    } else if (dialogType === 'delete' && selectedEmployee) {
-      setEmployees(prev => prev.filter(emp => emp.id !== selectedEmployee.id));
-      toast({
-        title: 'Employee Removed',
-        description: `${selectedEmployee.name} has been removed from the system.`,
+        title: 'Error',
+        description: 'Failed to update employee',
         variant: 'destructive',
       });
     }
@@ -143,7 +147,6 @@ const UserManagementPage: React.FC = () => {
   const getRoleBadge = (role: string) => {
     const variants = {
       admin: 'bg-red-100 text-red-800 border-red-200',
-      hr: 'bg-purple-100 text-purple-800 border-purple-200',
       manager: 'bg-blue-100 text-blue-800 border-blue-200',
       employee: 'bg-gray-100 text-gray-800 border-gray-200',
     };
@@ -155,17 +158,17 @@ const UserManagementPage: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (isActive: boolean) => {
     return (
-      <Badge className={status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <Badge className={isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+        {isActive ? 'Active' : 'Inactive'}
       </Badge>
     );
   };
 
   const stats = {
     totalEmployees: employees.length,
-    activeEmployees: employees.filter(emp => emp.status === 'active').length,
+    activeEmployees: employees.filter(emp => emp.is_active).length,
     managers: employees.filter(emp => emp.role === 'manager').length,
     departments: new Set(employees.map(emp => emp.department)).size
   };
@@ -177,13 +180,10 @@ const UserManagementPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-corporate-black">User Management</h1>
           <p className="text-gray-600 mt-1">Manage employee accounts and permissions</p>
         </div>
-        <Button 
-          className="bg-corporate-orange hover:bg-corporate-orange-dark text-white"
-          onClick={() => handleOpenDialog('add')}
-        >
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
+        <UserManagementDialog 
+          managers={managers || []}
+          onUserCreated={fetchEmployees}
+        />
       </div>
 
       {/* Stats Cards */}
@@ -240,69 +240,73 @@ const UserManagementPage: React.FC = () => {
           <CardDescription>Manage employee accounts, roles, and permissions</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Leave Balance</TableHead>
-                <TableHead>Join Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {employees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-corporate-orange rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {employee.name.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-corporate-black">{employee.name}</p>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Mail className="h-3 w-3" />
-                          <span>{employee.email}</span>
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Position</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Hire Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {employees.map((employee) => (
+                  <TableRow key={employee.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 bg-corporate-orange rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-medium">
+                            {employee.first_name[0]}{employee.last_name[0]}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-corporate-black">
+                            {employee.first_name} {employee.last_name}
+                          </p>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Mail className="h-3 w-3" />
+                            <span>{employee.email}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{employee.department}</TableCell>
-                  <TableCell>{getRoleBadge(employee.role)}</TableCell>
-                  <TableCell>{getStatusBadge(employee.status)}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>Annual: {employee.annualLeaveBalance} days</p>
-                      <p className="text-gray-600">Sick: {employee.sickLeaveBalance} days</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{new Date(employee.joinDate).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleOpenDialog('edit', employee)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleOpenDialog('delete', employee)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    <TableCell>{employee.department}</TableCell>
+                    <TableCell>{employee.position}</TableCell>
+                    <TableCell>{getRoleBadge(employee.role)}</TableCell>
+                    <TableCell>{getStatusBadge(employee.is_active)}</TableCell>
+                    <TableCell>{new Date(employee.hire_date).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleOpenDialog('edit', employee)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleOpenDialog('delete', employee)}
+                          disabled={!employee.is_active}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -311,26 +315,36 @@ const UserManagementPage: React.FC = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {dialogType === 'add' ? 'Add New Employee' : 
-               dialogType === 'edit' ? 'Edit Employee' : 'Delete Employee'}
+              {dialogType === 'edit' ? 'Edit Employee' : 'Deactivate Employee'}
             </DialogTitle>
             <DialogDescription>
               {dialogType === 'delete' 
-                ? 'Are you sure you want to remove this employee? This action cannot be undone.'
-                : 'Fill in the employee information below.'}
+                ? 'Are you sure you want to deactivate this employee? They will no longer be able to access the system.'
+                : 'Update the employee information below.'}
             </DialogDescription>
           </DialogHeader>
 
           {dialogType !== 'delete' ? (
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Enter full name"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name || ''}
+                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name || ''}
+                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                    placeholder="Enter last name"
+                  />
+                </div>
               </div>
 
               <div>
@@ -373,54 +387,41 @@ const UserManagementPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Select 
-                    value={formData.role} 
-                    onValueChange={(value) => setFormData({...formData, role: value as Employee['role']})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role.charAt(0).toUpperCase() + role.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="position">Position</Label>
+                  <Input
+                    id="position"
+                    value={formData.position || ''}
+                    onChange={(e) => setFormData({...formData, position: e.target.value})}
+                    placeholder="Enter position"
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="annualLeave">Annual Leave Days</Label>
-                  <Input
-                    id="annualLeave"
-                    type="number"
-                    value={formData.annualLeaveBalance || ''}
-                    onChange={(e) => setFormData({...formData, annualLeaveBalance: parseInt(e.target.value)})}
-                    placeholder="20"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="sickLeave">Sick Leave Days</Label>
-                  <Input
-                    id="sickLeave"
-                    type="number"
-                    value={formData.sickLeaveBalance || ''}
-                    onChange={(e) => setFormData({...formData, sickLeaveBalance: parseInt(e.target.value)})}
-                    placeholder="12"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({...formData, role: value as Employee['role']})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           ) : selectedEmployee && (
             <div className="bg-gray-50 p-4 rounded-lg">
-              <p><strong>Name:</strong> {selectedEmployee.name}</p>
+              <p><strong>Name:</strong> {selectedEmployee.first_name} {selectedEmployee.last_name}</p>
               <p><strong>Email:</strong> {selectedEmployee.email}</p>
               <p><strong>Department:</strong> {selectedEmployee.department}</p>
+              <p><strong>Position:</strong> {selectedEmployee.position}</p>
               <p><strong>Role:</strong> {selectedEmployee.role}</p>
             </div>
           )}
@@ -436,8 +437,7 @@ const UserManagementPage: React.FC = () => {
                 : 'bg-corporate-orange hover:bg-corporate-orange-dark text-white'
               }
             >
-              {dialogType === 'add' ? 'Add Employee' : 
-               dialogType === 'edit' ? 'Update Employee' : 'Delete Employee'}
+              {dialogType === 'edit' ? 'Update Employee' : 'Deactivate Employee'}
             </Button>
           </DialogFooter>
         </DialogContent>
