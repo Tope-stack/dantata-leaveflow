@@ -236,14 +236,14 @@ export const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
             <div>
               <Label htmlFor="manager">Assign Manager</Label>
               <Select 
-                value={formData.manager_id} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, manager_id: value }))}
+                value={formData.manager_id || "none"} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, manager_id: value === "none" ? "" : value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a manager (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Manager</SelectItem>
+                  <SelectItem value="none">No Manager</SelectItem>
                   {managers.map(manager => (
                     <SelectItem key={manager.id} value={manager.id}>
                       {manager.first_name} {manager.last_name} - {manager.department}
