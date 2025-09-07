@@ -16,11 +16,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLeaveRequests } from '@/hooks/useLeaveRequests';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { LeaveApprovalCard } from './LeaveApprovalCard';
+import { useNavigate } from 'react-router-dom';
 
 export const ManagerDashboard: React.FC = () => {
   const { user, profile } = useAuth();
   const { requests, loading: requestsLoading, approveRequest, rejectRequest } = useLeaveRequests();
   const { teamMembers, loading: teamLoading } = useTeamMembers();
+  const navigate = useNavigate();
 
   if (!profile || profile.role !== 'manager') {
     return null;
@@ -79,11 +81,18 @@ export const ManagerDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white">
+          <Button 
+            variant="outline" 
+            className="border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white"
+            onClick={() => navigate('/team-reports')}
+          >
             <FileText className="h-4 w-4 mr-2" />
             Team Report
           </Button>
-          <Button className="bg-corporate-orange hover:bg-corporate-orange-dark text-white">
+          <Button 
+            className="bg-corporate-orange hover:bg-corporate-orange-dark text-white"
+            onClick={() => navigate('/team-calendar')}
+          >
             <Calendar className="h-4 w-4 mr-2" />
             View Calendar
           </Button>

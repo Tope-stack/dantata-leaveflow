@@ -15,9 +15,11 @@ import {
   CalendarDays
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export const EmployeeDashboard: React.FC = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
 
   // Mock data for demonstration
   const leaveBalance = {
@@ -74,7 +76,10 @@ export const EmployeeDashboard: React.FC = () => {
             Here's an overview of your leave status and recent activity.
           </p>
         </div>
-        <Button className="bg-corporate-orange hover:bg-corporate-orange-dark text-white">
+        <Button 
+          className="bg-corporate-orange hover:bg-corporate-orange-dark text-white"
+          onClick={() => navigate('/apply-leave')}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Apply for Leave
         </Button>

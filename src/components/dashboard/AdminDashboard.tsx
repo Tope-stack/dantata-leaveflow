@@ -21,12 +21,14 @@ import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { LeaveApprovalCard } from './LeaveApprovalCard';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
+import { useNavigate } from 'react-router-dom';
 
 export const AdminDashboard: React.FC = () => {
   const { user, profile } = useAuth();
   const { requests, loading: requestsLoading, approveRequest, rejectRequest, refetch: refetchRequests } = useLeaveRequests();
   const { teamMembers, loading: teamLoading } = useTeamMembers();
   const { logs, loading: logsLoading } = useAuditLogs();
+  const navigate = useNavigate();
 
   if (!profile || profile.role !== 'admin') {
     return null;
@@ -95,7 +97,11 @@ export const AdminDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white">
+          <Button 
+            variant="outline" 
+            className="border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white"
+            onClick={() => navigate('/system-reports')}
+          >
             <FileText className="h-4 w-4 mr-2" />
             Generate Report
           </Button>
@@ -197,7 +203,11 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               )}
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => navigate('/audit-logs')}
+            >
               View All Audit Logs
             </Button>
           </CardContent>
@@ -296,19 +306,35 @@ export const AdminDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white"
+              onClick={() => navigate('/user-management')}
+            >
               <Users className="h-5 w-5" />
               <span>Manage Users</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white"
+              onClick={() => navigate('/leave-policies')}
+            >
               <Settings className="h-5 w-5" />
               <span>Leave Policies</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white"
+              onClick={() => navigate('/system-reports')}
+            >
               <BarChart3 className="h-5 w-5" />
               <span>Reports</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2 border-corporate-orange text-corporate-orange hover:bg-corporate-orange hover:text-white"
+              onClick={() => navigate('/audit-logs')}
+            >
               <Shield className="h-5 w-5" />
               <span>Audit Logs</span>
             </Button>
