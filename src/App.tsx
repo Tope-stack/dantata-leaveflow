@@ -18,6 +18,7 @@ import SystemReportsPage from "./pages/SystemReportsPage";
 import TeamCalendarPage from "./pages/TeamCalendarPage";
 import TeamReportsPage from "./pages/TeamReportsPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import ZohoCallbackPage from "@/pages/ZohoCallbackPage";
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/leave-policies" element={<LeavePoliciesPage />} />
               <Route path="/system-reports" element={<SystemReportsPage />} />
               <Route path="/audit-logs" element={<AuditLogsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/integrations" element={<IntegrationsPage />} />
               <Route path="/zoho-callback" element={<ZohoCallbackPage />} />
               <Route path="/auth/zoho/callback" element={<ZohoCallbackPage />} />
